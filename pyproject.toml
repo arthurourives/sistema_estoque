@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "estoque-hardware"
+version = "1.0.0"
+description = "CLI para gerenciamento de estoque de hardware"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Seu Nome" }
+]
+
+dependencies = []
+
+[project.scripts]
+estoque = "estoque.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
