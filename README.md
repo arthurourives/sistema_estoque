@@ -18,6 +18,15 @@ CLI em Python para gerenciamento de estoque de hardware com persistência local 
 
 # Instalação
 
+Clone o repositório:
+
+```bash
+git clone <repositorio>
+cd sistema-estoque
+```
+
+Instale o projeto:
+
 ```bash
 pip install -e .
 ```

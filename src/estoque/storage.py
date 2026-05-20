@@ -19,13 +19,39 @@ class JSONStorage:
         if not self.arquivo.exists():
             return []
 
-        with self.arquivo.open("r", encoding="utf-8") as file:
-            dados = json.load(file)
+        try:
+            with self.arquivo.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                conteudo = file.read().strip()
 
-        return [Produto.from_dict(item) for item in dados]
+                if not conteudo:
+                    return []
+
+                dados = json.loads(conteudo)
+
+        except json.JSONDecodeError:
+            return []
+
+        return [
+            Produto.from_dict(item)
+            for item in dados
+        ]
 
     def salvar(self, produtos: List[Produto]) -> None:
-        dados = [produto.to_dict() for produto in produtos]
+        dados = [
+            produto.to_dict()
+            for produto in produtos
+        ]
 
-        with self.arquivo.open("w", encoding="utf-8") as file:
-            json.dump(dados, file, indent=4, ensure_ascii=False)
+        with self.arquivo.open(
+            "w",
+            encoding="utf-8",
+        ) as file:
+            json.dump(
+                dados,
+                file,
+                indent=4,
+                ensure_ascii=False,
+            )
