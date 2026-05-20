@@ -1,22 +1,32 @@
+from dataclasses import dataclass, asdict
+
+
+@dataclass(slots=True)
 class Produto:
-    def __init__(self, codigo, nome, categoria, preco, quantidade):
-        if preco < 0:
-            raise ValueError("O preço deve ser positivo.")
+    codigo: str
+    nome: str
+    categoria: str
+    preco: float
+    quantidade: int
 
-        if quantidade < 0:
-            raise ValueError("A quantidade não pode ser negativa.")
+    def to_dict(self) -> dict:
+        return asdict(self)
 
-        self.codigo = codigo
-        self.nome = nome
-        self.categoria = categoria
-        self.preco = preco
-        self.quantidade = quantidade
+    @classmethod
+    def from_dict(cls, data: dict) -> "Produto":
+        return cls(
+            codigo=data["codigo"],
+            nome=data["nome"],
+            categoria=data["categoria"],
+            preco=float(data["preco"]),
+            quantidade=int(data["quantidade"]),
+        )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
-            f"[{self.codigo}] "
-            f"{self.nome} | "
-            f"Categoria: {self.categoria} | "
-            f"Preço: R$ {self.preco:.2f} | "
-            f"Qtd: {self.quantidade}"
+            f"Produto(codigo='{self.codigo}', "
+            f"nome='{self.nome}', "
+            f"categoria='{self.categoria}', "
+            f"preco={self.preco}, "
+            f"quantidade={self.quantidade})"
         )

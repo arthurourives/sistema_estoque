@@ -1,12 +1,12 @@
 __pycache__/
 *.pyc
-
-.venv/
-venv/
+*.pyo
+*.pyd
 
 .pytest_cache/
 
-data/estoque.json
+.venv/
+venv/
 
 dist/
 build/

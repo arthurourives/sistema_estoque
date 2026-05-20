@@ -1,122 +1,224 @@
-import json
-from pathlib import Path
+import logging
+from typing import List
 
+from .exceptions import (
+    EstoqueInsuficienteError,
+    ProdutoDuplicadoError,
+    ProdutoNaoEncontradoError,
+)
 from .produto import Produto
+from .storage import JSONStorage
+from .validators import (
+    validar_codigo,
+    validar_preco,
+    validar_quantidade,
+    validar_texto,
+)
 
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = BASE_DIR / "data"
-DATA_FILE = DATA_DIR / "estoque.json"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s - %(message)s",
+)
 
 
 class Estoque:
-    def __init__(self, arquivo=DATA_FILE):
-        self.arquivo = Path(arquivo)
+    """
+    Estrutura principal do sistema.
 
-        self.produtos_nao_ordenados = []
-        self.produtos_ordenados = []
+    Mantém:
+    - vetor ordenado por código
+    - busca binária
+    - vetor não ordenado para busca linear
+    """
 
-        self._carregar_dados()
+    def __init__(self, storage: JSONStorage | None = None) -> None:
+        self.storage = storage or JSONStorage()
 
-    def adicionar_produto(self, produto):
+        self._produtos: List[Produto] = self.storage.carregar()
+
+        self._produtos.sort(key=lambda produto: produto.codigo)
+
+    @property
+    def produtos(self) -> List[Produto]:
+        return self._produtos
+
+    def adicionar_produto(self, produto: Produto) -> None:
+        validar_codigo(produto.codigo)
+        validar_texto(produto.nome, "Nome")
+        validar_texto(produto.categoria, "Categoria")
+        validar_preco(produto.preco)
+        validar_quantidade(produto.quantidade)
+
         if self.buscar_produto(produto.codigo):
-            raise ValueError("Já existe um produto com esse código.")
-
-        self.produtos_nao_ordenados.append(produto)
+            raise ProdutoDuplicadoError(
+                f"Produto '{produto.codigo}' já existe."
+            )
 
         self._inserir_ordenado(produto)
 
-        self._salvar_dados()
+        self.storage.salvar(self._produtos)
 
-    def _inserir_ordenado(self, novo_produto):
-        posicao = 0
+        logging.info("Produto cadastrado: %s", produto.codigo)
 
-        for i, produto in enumerate(self.produtos_ordenados):
-            if novo_produto.codigo > produto.codigo:
-                posicao = i + 1
-            else:
-                break
+    def _inserir_ordenado(self, produto: Produto) -> None:
+        indice = 0
 
-        self.produtos_ordenados.insert(posicao, novo_produto)
+        while (
+            indice < len(self._produtos)
+            and self._produtos[indice].codigo < produto.codigo
+        ):
+            indice += 1
 
-    def buscar_produto(self, codigo):
-        for produto in self.produtos_ordenados:
+        self._produtos.insert(indice, produto)
+
+    def buscar_produto(self, codigo: str) -> Produto | None:
+        """
+        Busca binária manual.
+        Complexidade:
+        O(log n)
+        """
+
+        esquerda = 0
+        direita = len(self._produtos) - 1
+
+        while esquerda <= direita:
+            meio = (esquerda + direita) // 2
+
+            produto = self._produtos[meio]
+
             if produto.codigo == codigo:
                 return produto
 
+            if produto.codigo < codigo:
+                esquerda = meio + 1
+            else:
+                direita = meio - 1
+
         return None
 
-    def listar_produtos(self):
-        return self.produtos_ordenados
+    def buscar_por_nome(self, nome: str) -> List[Produto]:
+        """
+        Busca linear em vetor não ordenado.
+        Complexidade:
+        O(n)
+        """
 
-    def remover_produto(self, codigo):
+        termo = nome.lower()
+
+        return [
+            produto
+            for produto in self._produtos
+            if termo in produto.nome.lower()
+        ]
+
+    def listar_produtos(self) -> List[Produto]:
+        return self._produtos
+
+    def listar_por_categoria(self, categoria: str) -> List[Produto]:
+        categoria = categoria.lower()
+
+        return [
+            produto
+            for produto in self._produtos
+            if produto.categoria.lower() == categoria
+        ]
+
+    def remover_produto(self, codigo: str) -> None:
         produto = self.buscar_produto(codigo)
 
         if not produto:
-            return False
-
-        self.produtos_nao_ordenados.remove(produto)
-        self.produtos_ordenados.remove(produto)
-
-        self._salvar_dados()
-
-        return True
-
-    def atualizar_quantidade(self, codigo, quantidade):
-        produto = self.buscar_produto(codigo)
-
-        if not produto:
-            raise ValueError("Produto não encontrado.")
-
-        if quantidade < 0:
-            raise ValueError("Quantidade inválida.")
-
-        produto.quantidade = quantidade
-
-        self._salvar_dados()
-
-    def _salvar_dados(self):
-        self.arquivo.parent.mkdir(parents=True, exist_ok=True)
-
-        dados = []
-
-        for produto in self.produtos_nao_ordenados:
-            dados.append({
-                "codigo": produto.codigo,
-                "nome": produto.nome,
-                "categoria": produto.categoria,
-                "preco": produto.preco,
-                "quantidade": produto.quantidade
-            })
-
-        with open(self.arquivo, "w", encoding="utf-8") as arquivo:
-            json.dump(
-                dados,
-                arquivo,
-                indent=4,
-                ensure_ascii=False
+            raise ProdutoNaoEncontradoError(
+                f"Produto '{codigo}' não encontrado."
             )
 
-    def _carregar_dados(self):
-        if not self.arquivo.exists():
-            return
+        self._produtos.remove(produto)
 
-        try:
-            with open(self.arquivo, "r", encoding="utf-8") as arquivo:
-                dados = json.load(arquivo)
+        self.storage.salvar(self._produtos)
 
-            for item in dados:
-                produto = Produto(
-                    item["codigo"],
-                    item["nome"],
-                    item["categoria"],
-                    item["preco"],
-                    item["quantidade"]
-                )
+        logging.info("Produto removido: %s", codigo)
 
-                self.produtos_nao_ordenados.append(produto)
+    def editar_produto(
+        self,
+        codigo: str,
+        nome: str | None = None,
+        categoria: str | None = None,
+        preco: float | None = None,
+        quantidade: int | None = None,
+    ) -> Produto:
+        produto = self.buscar_produto(codigo)
 
-                self._inserir_ordenado(produto)
+        if not produto:
+            raise ProdutoNaoEncontradoError(
+                f"Produto '{codigo}' não encontrado."
+            )
 
-        except json.JSONDecodeError:
-            pass
+        if nome is not None:
+            validar_texto(nome, "Nome")
+            produto.nome = nome
+
+        if categoria is not None:
+            validar_texto(categoria, "Categoria")
+            produto.categoria = categoria
+
+        if preco is not None:
+            validar_preco(preco)
+            produto.preco = preco
+
+        if quantidade is not None:
+            validar_quantidade(quantidade)
+            produto.quantidade = quantidade
+
+        self.storage.salvar(self._produtos)
+
+        logging.info("Produto atualizado: %s", codigo)
+
+        return produto
+
+    def registrar_venda(self, codigo: str, quantidade: int) -> Produto:
+        validar_quantidade(quantidade)
+
+        produto = self.buscar_produto(codigo)
+
+        if not produto:
+            raise ProdutoNaoEncontradoError(
+                f"Produto '{codigo}' não encontrado."
+            )
+
+        if produto.quantidade < quantidade:
+            raise EstoqueInsuficienteError(
+                "Estoque insuficiente para venda."
+            )
+
+        produto.quantidade -= quantidade
+
+        self.storage.salvar(self._produtos)
+
+        logging.info(
+            "Venda registrada: %s (%s unidades)",
+            codigo,
+            quantidade,
+        )
+
+        return produto
+
+    def relatorio_estoque_baixo(
+        self,
+        limite: int = 5,
+    ) -> List[Produto]:
+        return [
+            produto
+            for produto in self._produtos
+            if produto.quantidade <= limite
+        ]
+
+    def produto_menor_preco(self) -> Produto | None:
+        if not self._produtos:
+            return None
+
+        return min(self._produtos, key=lambda produto: produto.preco)
+
+    def produto_maior_preco(self) -> Produto | None:
+        if not self._produtos:
+            return None
+
+        return max(self._produtos, key=lambda produto: produto.preco)
