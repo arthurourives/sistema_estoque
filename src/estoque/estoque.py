@@ -14,6 +14,7 @@ from .validators import (
     validar_quantidade,
     validar_texto,
 )
+from .storage import JSONStorage, VendaStorage
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,6 +38,8 @@ class Estoque:
         self._produtos: List[Produto] = self.storage.carregar()
 
         self._produtos.sort(key=lambda produto: produto.codigo)
+
+        self.venda_storage = VendaStorage()
 
     @property
     def produtos(self) -> List[Produto]:
@@ -191,6 +194,11 @@ class Estoque:
 
         produto.quantidade -= quantidade
 
+        self.venda_storage.registrar_venda(
+            produto,
+            quantidade,
+        )
+
         self.storage.salvar(self._produtos)
 
         logging.info(
@@ -222,3 +230,6 @@ class Estoque:
             return None
 
         return max(self._produtos, key=lambda produto: produto.preco)
+
+    def listar_vendas(self) -> list[dict]:
+        return self.venda_storage.listar_vendas()

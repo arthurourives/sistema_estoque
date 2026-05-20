@@ -15,5 +15,4 @@ build/
 .idea/
 .vscode/
 
-data/estoque.json
 estoque_hardware.egg-info/

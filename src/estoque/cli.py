@@ -62,9 +62,20 @@ def criar_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("menor-preco")
     subparsers.add_parser("maior-preco")
+    subparsers.add_parser("listar-vendas")
 
     return parser
 
+def imprimir_vendas(vendas: list[dict]) -> None:
+    for venda in vendas:
+        print(
+            f"[{venda['timestamp']}] "
+            f"{venda['codigo']} | "
+            f"{venda['nome']} | "
+            f"Qtd: {venda['quantidade']} | "
+            f"Unitário: R$ {venda['valor_unitario']:.2f} | "
+            f"Total: R$ {venda['valor_total']:.2f}"
+        )
 
 def main() -> None:
     parser = criar_parser()
@@ -157,6 +168,15 @@ def main() -> None:
 
                 if produto:
                     imprimir_produtos([produto])
+
+            case "listar-vendas":
+                vendas = estoque.listar_vendas()
+
+                if not vendas:
+                    print("Nenhuma venda registrada.")
+                    return
+
+                imprimir_vendas(vendas)
 
             case _:
                 parser.print_help()

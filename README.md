@@ -44,12 +44,7 @@ estoque listar
 ## Cadastrar produto
 
 ```bash
-estoque cadastrar \
-  --codigo CPU001 \
-  --nome "Ryzen 7 7800X3D" \
-  --categoria Processador \
-  --preco 2899.90 \
-  --quantidade 10
+estoque cadastrar --codigo CPU001 --nome "Ryzen 7 7800X3D" --categoria Processador --preco 2899.90 --quantidade 10
 ```
 
 ## Buscar por código
@@ -67,18 +62,13 @@ estoque buscar-nome --nome Ryzen
 ## Editar produto
 
 ```bash
-estoque editar \
-  --codigo CPU001 \
-  --preco 2599.90 \
-  --quantidade 8
+estoque editar --codigo CPU001 --preco 2599.90 --quantidade 8
 ```
 
 ## Registrar venda
 
 ```bash
-estoque vender \
-  --codigo CPU001 \
-  --quantidade 2
+estoque vender --codigo CPU001 --quantidade 2
 ```
 
 ## Remover produto
