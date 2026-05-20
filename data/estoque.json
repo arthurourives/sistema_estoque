@@ -1,0 +1,23 @@
+[
+    {
+        "codigo": "CPU001",
+        "nome": "Ryzen 7 7800X3D",
+        "categoria": "Processador",
+        "preco": 2899.9,
+        "quantidade": 8
+    },
+    {
+        "codigo": "GPU001",
+        "nome": "RTX 4070 Super",
+        "categoria": "Placa de Vídeo",
+        "preco": 4599.9,
+        "quantidade": 4
+    },
+    {
+        "codigo": "RAM001",
+        "nome": "Corsair DDR5 32GB",
+        "categoria": "Memória",
+        "preco": 899.9,
+        "quantidade": 15
+    }
+]

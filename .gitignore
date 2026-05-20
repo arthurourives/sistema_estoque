@@ -6,14 +6,15 @@ __pycache__/
 .pytest_cache/
 
 .venv/
-idea/
 venv/
+.idea/
+idea/
 
 dist/
 build/
 *.egg-info/
 
-.idea/
 .vscode/
 
+data/
 estoque_hardware.egg-info/
