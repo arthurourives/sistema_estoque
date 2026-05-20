@@ -70,6 +70,11 @@ estoque editar --codigo CPU001 --preco 2599.90 --quantidade 8
 ```bash
 estoque vender --codigo CPU001 --quantidade 2
 ```
+## Listar histórico de vendas
+
+```
+estoque listar-vendas
+```
 
 ## Remover produto
 
